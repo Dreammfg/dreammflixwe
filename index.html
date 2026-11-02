@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090b10">
+<title>DREAMMFLIX</title>
+<style>
+:root{--bg:#090b10;--panel:#141923;--muted:#9ba5b5;--accent:#ff6b35;--white:#f5f7fb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--white);font-family:Arial,sans-serif}
+header{padding:22px 18px 14px;position:sticky;top:0;background:#090b10ee;backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid #252b36}
+.logo{font-size:25px;font-weight:900;letter-spacing:1px}.logo span{color:var(--accent)}
+.tagline{color:var(--muted);font-size:12px;margin-top:5px}
+.search{width:100%;margin-top:17px;padding:14px;border:1px solid #303846;border-radius:12px;background:#171d28;color:white;font-size:16px}
+nav{display:flex;gap:9px;overflow:auto;padding:14px 18px;position:sticky;top:116px;background:#090b10;z-index:4}
+nav button,.action{border:0;border-radius:20px;padding:10px 15px;background:#1b2330;color:white;white-space:nowrap;font-weight:bold}
+nav button.active,.action.primary{background:var(--accent);color:#111}
+main{padding:8px 18px 40px}
+h2{font-size:20px;margin:18px 0 12px}
+.note{color:var(--muted);font-size:13px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.card{background:var(--panel);border:1px solid #252d3a;border-radius:13px;overflow:hidden}
+.poster{height:190px;background:linear-gradient(135deg,#222d40,#11151d);display:flex;align-items:center;justify-content:center;color:#8c9ab0;font-size:13px;text-align:center;padding:10px}
+.poster img{width:100%;height:100%;object-fit:cover}
+.info{padding:11px}
+.info h3{font-size:14px;margin:0 0 7px;line-height:1.35}
+.meta{font-size:11px;color:var(--muted);margin-bottom:10px}
+.actions{display:flex;gap:7px;flex-wrap:wrap}
+.action{font-size:11px;padding:8px 10px;cursor:pointer}
+.action:disabled{opacity:.5}
+.services{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.service{background:var(--panel);border:1px solid #252d3a;border-radius:12px;padding:15px;color:white;text-decoration:none}
+.service strong{display:block;margin-bottom:5px}
+.service small{color:var(--muted);line-height:1.4}
+.empty{padding:28px 12px;text-align:center;color:var(--muted)}
+footer{text-align:center;color:#758092;padding:25px;font-size:12px}
+a{color:inherit}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}main{max-width:1100px;margin:auto}.poster{height:240px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">DREAMM<span>FLIX</span></div>
+  <div class="tagline">Your next movie night starts here.</div>
+  <input class="search" id="search" placeholder="Search movies, shows or anime..." />
+</header>
+<nav id="nav">
+  <button class="active" data-tab="home">Home</button>
+  <button data-tab="movies">Movies</button>
+  <button data-tab="tv">TV Shows</button>
+  <button data-tab="anime">Anime</button>
+  <button data-tab="saved">My List</button>
+  <button data-tab="free">Free Streaming</button>
+</nav>
+<main>
+  <section id="content">
+    <h2>Welcome to DREAMMFLIX</h2>
+    <p class="note">Discover movies, television and anime. Find legal places to watch them.</p>
+    <h2>Explore</h2>
+    <div class="services">
+      <a class="service" href="https://tubitv.com/" target="_blank" rel="noopener"><strong>Tubi</strong><small>Free ad-supported movies and shows</small></a>
+      <a class="service" href="https://www.pluto.tv/" target="_blank" rel="noopener"><strong>Pluto TV</strong><small>Free live channels and on-demand titles</small></a>
+      <a class="service" href="https://watch.plex.tv/" target="_blank" rel="noopener"><strong>Plex</strong><small>Free movies and television</small></a>
+      <a class="service" href="https://www.youtube.com/movies" target="_blank" rel="noopener"><strong>YouTube Movies</strong><small>Check free and rental options</small></a>
+    </div>
+  </section>
+</main>
+<footer>DREAMMFLIX · Discover something worth watching.</footer>
+<script>
+const content=document.getElementById("content");
+const search=document.getElementById("search");
+let tab="home", items=[], saved=JSON.parse(localStorage.getItem("dreammflix_saved")||"[]");
+let request=0;
+
+function escapeHTML(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function saveList(){localStorage.setItem("dreammflix_saved",JSON.stringify(saved));}
+function card(item){
+ const isSaved=saved.some(x=>x.id===item.id);
+ return `<article class="card">
+ <div class="poster">${item.image?`<img src="${escapeHTML(item.image)}" alt="" loading="lazy" onerror="this.parentElement.textContent='DREAMMFLIX'">`:"DREAMMFLIX"}</div>
+ <div class="info"><h3>${escapeHTML(item.title)}</h3>
+ <div class="meta">${escapeHTML(item.meta||"")}</div>
+ <div class="actions">
+ <a class="action primary" href="${escapeHTML(item.url)}" target="_blank" rel="noopener">Details</a>
+ <button class="action" onclick="toggleSave('${encodeURIComponent(item.id)}')">${isSaved?"Saved ✓":"＋ My List"}</button>
+ </div></div></article>`;
+}
+function render(title,description=""){
+ content.innerHTML=`<h2>${escapeHTML(title)}</h2>${description?`<p class="note">${escapeHTML(description)}</p>`:""}<div class="grid" id="results"></div>`;
+}
+function showItems(list){
+ const el=document.getElementById("results");
+ if(!el)return;
+ el.innerHTML=list.length?list.map(card).join(""):'<div class="empty">No results found. Try another search.</div>';
+}
+function toggleSave(encoded){
+ const id=decodeURIComponent(encoded);
+ const item=items.find(x=>x.id===id);
+ if(!item)return;
+ if(saved.some(x=>x.id===id))saved=saved.filter(x=>x.id!==id);
+ else saved.push(item);
+ saveList();
+ if(tab==="saved")showSaved();
+ else showItems(items);
+}
+function showSaved(){
+ items=saved.slice();
+ render("My List","Your saved discoveries are stored on this device.");
+ showItems(items);
+}
+async function loadTV(q=""){
+ const url=q?`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(q)}`:"https://api.tvmaze.com/shows?page=0";
+ const data=await (await fetch(url)).json();
+ return data.map(x=>{const s=x.show||x;return {id:"tv-"+s.id,title:s.name,meta:`TV Show · ${s.premiered||"Release date unavailable"}`,image:s.image?.medium||"",url:s.url||"https://www.tvmaze.com/"};});
+}
+async function loadAnime(q=""){
+ const url=q?`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(q)}&limit=24`:"https://api.jikan.moe/v4/top/anime?limit=24";
+ const data=await (await fetch(url)).json();
+ return (data.data||[]).map(a=>({id:"anime-"+a.mal_id,title:a.title,meta:`Anime · ${a.year||"Year unavailable"} · Score ${a.score||"N/A"}`,image:a.images?.jpg?.image_url||"",url:a.url}));
+}
+async function loadMovies(q=""){
+ const url=q?`https://archive.org/advancedsearch.php?q=${encodeURIComponent('mediatype:movies AND title:('+q+')')}&fl[]=identifier,title,year&rows=24&page=1&output=json`:`https://archive.org/advancedsearch.php?q=mediatype:movies&fl[]=identifier,title,year&rows=24&page=1&output=json`;
+ const data=await (await fetch(url)).json();
+ return (data.response?.docs||[]).map(m=>({id:"archive-"+m.identifier,title:m.title||"Untitled",meta:`Internet Archive · ${m.year||"Year unavailable"} · Check rights before viewing`,image:"",url:`https://archive.org/details/${encodeURIComponent(m.identifier)}`}));
+}
+async function load(){
+ const current=++request;
+ const q=search.value.trim();
+ if(tab==="home"){content.innerHTML=`<h2>Welcome to DREAMMFLIX</h2><p class="note">Search for something to watch, or explore a category below.</p><div class="services"><a class="service" href="https://tubitv.com/" target="_blank"><strong>Tubi</strong><small>Free movies and shows</small></a><a class="service" href="https://www.pluto.tv/" target="_blank"><strong>Pluto TV</strong><small>Free live and on-demand TV</small></a><a class="service" href="https://watch.plex.tv/" target="_blank"><strong>Plex</strong><small>Free streaming library</small></a><a class="service" href="https://www.youtube.com/movies" target="_blank"><strong>YouTube Movies</strong><small>Free and paid options</small></a></div>`;return;}
+ if(tab==="saved"){showSaved();return;}
+ if(tab==="free"){content.innerHTML=`<h2>Free Streaming</h2><p class="note">Availability varies by title and location. Some services include ads; some titles may require an account.</p><div class="services"><a class="service" href="https://tubitv.com/" target="_blank"><strong>Tubi</strong><small>Free ad-supported streaming</small></a><a class="service" href="https://www.pluto.tv/" target="_blank"><strong>Pluto TV</strong><small>Live channels and on-demand</small></a><a class="service" href="https://watch.plex.tv/" target="_blank"><strong>Plex</strong><small>Free movies and shows</small></a><a class="service" href="https://www.kanopy.com/" target="_blank"><strong>Kanopy</strong><small>Free with participating library access</small></a><a class="service" href="https://www.hoopladigital.com/" target="_blank"><strong>Hoopla</strong><small>Library-based movies and TV</small></a><a class="service" href="https://www.youtube.com/movies" target="_blank"><strong>YouTube Movies</strong><small>Check free titles</small></a></div>`;return;}
+ render(tab==="tv"?"TV Shows":tab==="anime"?"Anime":"Movies","Catalog information is provided by public discovery services.");
+ content.querySelector("#results").innerHTML='<div class="empty">Loading titles...</div>';
+ try{
+  items=tab==="tv"?await loadTV(q):tab==="anime"?await loadAnime(q):await loadMovies(q);
+  if(current===request)showItems(items);
+ }catch(e){if(current===request)content.querySelector("#results").innerHTML='<div class="empty">Could not load the catalog. Check your connection and try again.</div>';}
+}
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+ b.classList.add("active");tab=b.dataset.tab;search.value="";load();
+}));
+let timer;
+search.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(()=>{if(tab==="home")tab="movies";load();},450);});
+load();
+</script>
+</body>
+</html>
